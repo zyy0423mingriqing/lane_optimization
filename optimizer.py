@@ -214,13 +214,15 @@ class LaneOptimizer:
         )
 
         iterations = []
+        previous_gap = None
         for iteration in range(1, OptimizationParams.MAX_ITERATIONS + 1):
             alpha = strategy_meta['capacity'] / GL_current
             denominator = alpha * n_special + n_GL
             if denominator < NumericalParams.EPSILON:
                 break
 
-            P_special = alpha / denominator,
+            raw_P_special = alpha / denominator
+            P_special = min(raw_P_special, strategy_meta['eligible_total'] / n_special)
             assigned = {
                 key: P_special * strategy_meta['mix'][key]
                 for key in ['CAV', 'CHV', 'AV', 'HV']
@@ -247,6 +249,7 @@ class LaneOptimizer:
             U_special = P_special * 3600 / strategy_meta['capacity']
             U_GL = total_remaining * 3600 / (GL_new * n_GL)
             gap = abs(U_special - U_GL)
+            gap_improvement = None if previous_gap is None else previous_gap - gap
 
             iteration_result = {
                 'iteration': iteration,
@@ -260,6 +263,7 @@ class LaneOptimizer:
                 'U_special': U_special,
                 'U_GL': U_GL,
                 'gap': gap,
+                'gap_improvement': gap_improvement,
             }
             iterations.append(iteration_result)
 
@@ -285,6 +289,11 @@ class LaneOptimizer:
                     'final_iteration': iteration_result,
                 }
 
+            if previous_gap is not None and abs(previous_gap - gap) <= NumericalParams.EPSILON:
+                self._log(logs, verbose, f"[{strategy_meta['strategy']}] gap improvement is zero at n_special={n_special}, iter={iteration}")
+                break
+
+            previous_gap = gap
             GL_current = GL_new
 
         self._log(logs, verbose, f"[{strategy_meta['strategy']}] did not converge for n_special={n_special}")
