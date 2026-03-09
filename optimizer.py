@@ -80,7 +80,7 @@ class LaneOptimizer:
             return {
                 'strategy': 'CL',
                 'eligible_total': eligible_total,
-                'capacity': self.calculator.capacity_CL(self._safe_ratio(P_CAV, eligible_total)),
+                'capacity': self.calculator.capacity_CL(self._safe_ratio(P_CAV, eligible_total), L_max),
                 'mix': {
                     'CAV': self._safe_ratio(P_CAV, eligible_total),
                     'CHV': self._safe_ratio(P_CHV, eligible_total),
@@ -172,7 +172,7 @@ class LaneOptimizer:
         if P_CAV + P_AV > NumericalParams.EPSILON:
             capacities['AL'] = self.calculator.capacity_AL(self._safe_ratio(P_CAV, P_CAV + P_AV), L_max)
         if P_CAV + P_CHV > NumericalParams.EPSILON:
-            capacities['CL'] = self.calculator.capacity_CL(self._safe_ratio(P_CAV, P_CAV + P_CHV))
+            capacities['CL'] = self.calculator.capacity_CL(self._safe_ratio(P_CAV, P_CAV + P_CHV), L_max)
         if P_CAV > NumericalParams.EPSILON:
             capacities['CAL'] = self.calculator.capacity_CAL(L_max)
         if P_AV + P_CHV + P_HV > NumericalParams.EPSILON:

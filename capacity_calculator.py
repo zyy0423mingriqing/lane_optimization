@@ -36,12 +36,15 @@ class LaneCapacityCalculator:
 
         return 3600 / max(h_bar, NumericalParams.MIN_HEADWAY)
 
-    def capacity_CL(self, P_CAV_norm: float) -> float:
+    def capacity_CL(self, P_CAV_norm: float, L_max: int) -> float:
         P_pow_2 = P_CAV_norm ** 2
+        P_pow_Lmax = P_CAV_norm ** L_max
+        P_pow_Lmax_plus_1 = P_CAV_norm ** (L_max + 1)
         term1 = self.h_L * (1 - P_CAV_norm)
         term2 = self.h_A * (P_CAV_norm - P_pow_2)
-        term3 = self.h_C * P_pow_2
-        h_bar = term1 + term2 + term3
+        term3 = self.h_P * (P_pow_2 - P_pow_Lmax_plus_1) / (1 - P_pow_Lmax + NumericalParams.EPSILON)
+        term4 = self.h_C * P_pow_Lmax_plus_1 * (1 - P_CAV_norm) / (1 - P_pow_Lmax + NumericalParams.EPSILON)
+        h_bar = term1 + term2 + term3 + term4
         return 3600 / max(h_bar, NumericalParams.MIN_HEADWAY)
 
     def capacity_CAL(self, L_max: int) -> float:
