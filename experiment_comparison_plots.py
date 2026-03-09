@@ -18,9 +18,8 @@ import csv
 import matplotlib.pyplot as plt
 import numpy as np
 
-import main as lane_main
+from optimizer import LaneOptimizer
 from capacity_calculator import LaneCapacityCalculator
-from config import OptimizationParams
 
 
 VEHICLES = ["CAV", "CHV", "AV", "HV"]
@@ -30,18 +29,6 @@ EXPERIMENT_ALLOWED_STRATEGIES = {
     "AV": ["AL","NCAL","GL"],
     "HV": ["NCAL","GL"],
 }
-
-
-def apply_experiment_parameters() -> None:
-    """Apply the required algorithm parameters for the experiments."""
-    OptimizationParams.GA_GENERATIONS = 200
-    OptimizationParams.GA_POPULATION_SIZE = 100
-
-    OptimizationParams.PSO_N_PARTICLES = 80
-    OptimizationParams.PSO_N_ITERATIONS = 150
-
-    OptimizationParams.SA_INITIAL_TEMP = 1000.0
-    OptimizationParams.SA_COOLING_RATE = 0.95
 
 
 def build_penetration_scenarios(target_vehicle: str, step: float = 0.05) -> List[Dict[str, float]]:
@@ -84,43 +71,37 @@ def compute_optimized_capacity(
     p_segment: Dict[str, float],
     n_lanes: int,
     l_max: int,
-    mu: float,
-    method: str,
     verbose: bool,
     allowed_strategies: List[str] | None = None,
     n_runs: int = 1,
 ) -> float:
     """
-    Optimized group: directly call existing optimizer through main.py import.
+    Optimized group: directly call existing optimizer.
     When n_runs > 1, run the optimizer multiple times and return the average total capacity.
     """
-    optimizer = lane_main.LaneOptimizer(
-        N_lanes=n_lanes,
-        P_CAV=p_segment["CAV"],
-        P_CHV=p_segment["CHV"],
-        P_AV=p_segment["AV"],
-        P_HV=p_segment["HV"],
-        L_max=l_max,
-        mu=mu,
-        allowed_strategies=allowed_strategies,
-    )
+    optimizer = LaneOptimizer()
 
     capacities: List[float] = []
     for _ in range(n_runs):
-        solution = optimizer.solve(method=method, verbose=verbose)
-        capacities.append(solution["total_capacity"])
+        result = optimizer.optimize(
+            P_CAV=p_segment["CAV"],
+            P_CHV=p_segment["CHV"],
+            P_AV=p_segment["AV"],
+            P_HV=p_segment["HV"],
+            n=n_lanes,
+            L_max=l_max,
+            verbose=verbose,
+        )
+        capacities.append(result["best_result"]["total_capacity"])
 
-    # return float(np.mean(capacities))
-    return float(np.max(capacities))
+    return float(np.mean(capacities))
 
 
 def run_single_experiment(
     target_vehicle: str,
     n_lanes: int = 5,
     l_max: int = 5,
-    mu: float = 10000.0,
     step: float = 0.05,
-    method: str = "auto",
     verbose: bool = False,
     n_runs: int = 1,
 ) -> Dict[str, List[float]]:
@@ -139,8 +120,6 @@ def run_single_experiment(
                 p,
                 n_lanes=n_lanes,
                 l_max=l_max,
-                mu=mu,
-                method=method,
                 verbose=verbose,
                 allowed_strategies=EXPERIMENT_ALLOWED_STRATEGIES.get(target_vehicle),
                 n_runs=n_runs,
@@ -330,12 +309,10 @@ def plot_comparison(
 
 def run_all_experiments(
     output_dir: str = "experiment_figures",
-    method: str = "auto",
     verbose_solver: bool = False,
     n_runs: int = 1,
 ) -> None:
     """Run all 4 experiments and output 4 figures."""
-    apply_experiment_parameters()
     setup_plot_style()
 
     out = Path(output_dir)
@@ -346,9 +323,7 @@ def run_all_experiments(
             target_vehicle=vehicle,
             n_lanes=5,
             l_max=5,
-            mu=10000.0,
             step=0.05,
-            method=method,
             verbose=verbose_solver,
             n_runs=n_runs,
         )
@@ -359,9 +334,4 @@ def run_all_experiments(
 
 
 if __name__ == "__main__":
-    # Note: method='auto' follows the existing optimizer's multi-solver search.
-    # run_all_experiments(output_dir="experiment_figures_2200_pso_10^6", method="pso", verbose_solver=False, n_runs=5)
-    run_all_experiments(output_dir=f"experiment_figures__{datetime.now().strftime('%Y%m%d_%H%M%S')}", method="auto", verbose_solver=False, n_runs=3)
-    # run_all_experiments(output_dir="experiment_figures_2200_auto_10^6_10times", method="auto", verbose_solver=False, n_runs=10)
-    # run_all_experiments(output_dir="experiment_figures_2200_ga_10^6", method="ga", verbose_solver=False, n_runs=1)
-    # run_all_experiments(output_dir="experiment_figures_12200_sa_10^6", method="sa", verbose_solver=False, n_runs=1)
+    run_all_experiments(output_dir=f"experiment_figures_{datetime.now().strftime('%Y%m%d_%H%M%S')}", verbose_solver=False, n_runs=1)

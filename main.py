@@ -7,12 +7,12 @@ def main() -> None:
     optimizer = LaneOptimizer()
 
     result = optimizer.optimize(
-        P_CAV=0.1,
-        P_CHV=0.4,
-        P_AV=0.1,
-        P_HV=0.4,
-        n=3,
-        L_max=2,
+        P_CAV=0,
+        P_CHV=0,
+        P_AV=0,
+        P_HV=1,
+        n=5,
+        L_max=5,
         verbose=True,
     )
 

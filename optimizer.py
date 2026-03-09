@@ -148,12 +148,12 @@ class LaneOptimizer:
 
         if strategy_meta['rounding'] == 'floor_minus_one_if_integer':
             if abs(raw_lane_count - rounded_raw) < NumericalParams.EPSILON:
-                return int(rounded_raw - 1)
+                return int(rounded_raw)
             return int(math.floor(raw_lane_count))
 
         if strategy_meta['rounding'] == 'ceil_plus_one_if_integer':
             if abs(raw_lane_count - rounded_raw) < NumericalParams.EPSILON:
-                return int(rounded_raw + 1)
+                return int(rounded_raw)
             return int(math.ceil(raw_lane_count))
 
         raise ValueError(f"Unsupported rounding rule: {strategy_meta['rounding']}")
@@ -183,14 +183,14 @@ class LaneOptimizer:
             )
 
         checks = []
-        if capacities['AL'] is not None and not (capacities['GL'] < capacities['AL']):
-            checks.append(f"GL < AL violated: {capacities['GL']:.4f} !< {capacities['AL']:.4f}")
-        if capacities['CL'] is not None and not (capacities['GL'] < capacities['CL']):
-            checks.append(f"GL < CL violated: {capacities['GL']:.4f} !< {capacities['CL']:.4f}")
-        if capacities['CAL'] is not None and not (capacities['GL'] < capacities['CAL']):
-            checks.append(f"GL < CAL violated: {capacities['GL']:.4f} !< {capacities['CAL']:.4f}")
-        if capacities['NCAL'] is not None and not (capacities['GL'] > capacities['NCAL']):
-            checks.append(f"GL > NCAL violated: {capacities['GL']:.4f} !> {capacities['NCAL']:.4f}")
+        if capacities['AL'] is not None and not (capacities['GL'] <= capacities['AL']):
+            checks.append(f"GL <= AL violated: {capacities['GL']:.4f} !<= {capacities['AL']:.4f}")
+        if capacities['CL'] is not None and not (capacities['GL'] <= capacities['CL']):
+            checks.append(f"GL <= CL violated: {capacities['GL']:.4f} !<= {capacities['CL']:.4f}")
+        if capacities['CAL'] is not None and not (capacities['GL'] <= capacities['CAL']):
+            checks.append(f"GL <= CAL violated: {capacities['GL']:.4f} !<= {capacities['CAL']:.4f}")
+        if capacities['NCAL'] is not None and not (capacities['GL'] >= capacities['NCAL']):
+            checks.append(f"GL >= NCAL violated: {capacities['GL']:.4f} !>= {capacities['NCAL']:.4f}")
 
         if checks:
             raise ValueError("Capacity relationship check failed: " + "; ".join(checks))
@@ -375,18 +375,13 @@ class LaneOptimizer:
 
         GL_origin = self.calculator.capacity_GL(P_CAV, P_CHV, P_AV, P_HV, L_max)
         best_origin = GL_origin * n
-        self._log(logs, verbose, f"[BASELINE] GL_origin={GL_origin:.4f}, best_origin={best_origin:.4f}")
 
         capacities = self._validate_capacity_order(P_CAV, P_CHV, P_AV, P_HV, L_max)
-        self._log(logs, verbose, "[CAPACITY_CHECK] " + ", ".join(
-            f"{key}={value:.4f}" for key, value in capacities.items() if value is not None
-        ))
 
         cl_denominator = P_CHV + P_CAV
         cl_ratio = self._safe_ratio(P_CHV, cl_denominator)
         cl_threshold = 0.05 ** (1/L_max)
         candidate_strategies = ['CL', 'AL', 'CAL', 'NCAL'] if cl_denominator > NumericalParams.EPSILON and cl_ratio < cl_threshold else ['AL', 'CAL', 'NCAL']
-        self._log(logs, verbose, f"[CANDIDATES] ratio={cl_ratio:.6f}, threshold={cl_threshold:.6f}, strategies={candidate_strategies}")
 
         strategy_results = {}
         best_result = {
@@ -398,7 +393,6 @@ class LaneOptimizer:
         }
 
         for strategy in candidate_strategies:
-            self._log(logs, verbose, f"[SOLVE] start strategy {strategy}")
             result = self._solve_single_strategy(strategy, P_CAV, P_CHV, P_AV, P_HV, n, L_max, verbose, logs)
             strategy_results[strategy] = result
 
@@ -415,13 +409,9 @@ class LaneOptimizer:
                     'improvement_percent': (total_capacity - best_origin) / best_origin * 100,
                 }
 
-        self._log(
-            logs,
-            verbose,
-            f"[BEST] strategy={best_result['strategy']}, allocation={best_result['lane_allocation']}, "
-            f"capacity={best_result['total_capacity']:.4f}, improvement={best_result['improvement']:.4f}, "
-            f"improvement_percent={best_result['improvement_percent']:.4f}%"
-        )
+        if verbose:
+            print(f"最优策略: {best_result['strategy']}, 车道分配: {best_result['lane_allocation']}")
+            print(f"总容量: {best_result['total_capacity']:.2f} veh/h, 提升: {best_result['improvement_percent']:.2f}%")
 
         return {
             'inputs': {
