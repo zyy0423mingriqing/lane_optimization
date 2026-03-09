@@ -203,8 +203,8 @@ def plot_comparison(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     x = np.asarray(result["x_percent"], dtype=float)
-    baseline = np.asarray(result["baseline"], dtype=float)
-    optimized = np.asarray(result["optimized"], dtype=float)
+    baseline = np.asarray(result["baseline"], dtype=float) / 1000
+    optimized = np.asarray(result["optimized"], dtype=float) / 1000
     improvement = np.asarray(result["improvement_pct"], dtype=float)
 
     fig, ax = plt.subplots(figsize=(10.5, 6.8))
@@ -218,10 +218,10 @@ def plot_comparison(
         color="#b8d3a8",
         alpha=0.72,
         label="Improvement Rate",
-        zorder=1,
+        zorder=0,
     )
 
-    ax.fill_between(x, baseline, optimized, color="#d89a9a", alpha=0.18, zorder=2)
+    ax.fill_between(x, baseline, optimized, color="#d89a9a", alpha=0.18, zorder=1)
 
     baseline_line, = ax.plot(
         x,
@@ -234,7 +234,7 @@ def plot_comparison(
         markeredgewidth=1.0,
         linewidth=2.4,
         label="No Dedicated Lane (All GL)",
-        zorder=4,
+        zorder=1,
     )
 
     optimized_line, = ax.plot(
@@ -248,15 +248,9 @@ def plot_comparison(
         markeredgewidth=1.0,
         linewidth=2.4,
         label="Elastic Dedicated Lane (Proposed)",
-        zorder=5,
+        zorder=2,
     )
 
-    ax.set_title(
-        f"Capacity Comparison of Elastic Dedicated Lane Strategy ({target_vehicle} Sweep)",
-        fontsize=20,
-        fontweight="bold",
-        pad=20,
-    )
     ax.set_xlabel(f"{target_vehicle} Penetration Rate / %", fontsize=18, fontweight="bold")
     ax.set_ylabel(r"Total Segment Capacity / ($\times 10^3$ veh/h)", fontsize=18, fontweight="bold")
     ax2.set_ylabel("Capacity Improvement / %", fontsize=18, fontweight="bold", color="#6ea64b")
@@ -264,15 +258,15 @@ def plot_comparison(
     ax.set_xlim(x.min(), x.max())
     ax.set_xticks(x)
 
-    y_min = min(baseline.min(), optimized.min())
-    y_max = max(baseline.max(), optimized.max())
-    y_margin = max((y_max - y_min) * 0.12, 0.15)
-    ax.set_ylim(y_min - y_margin * 0.4, y_max + y_margin)
-
-    improvement_min = float(improvement.min())
-    upper_limit = max(0.0, float(improvement.max()) + 0.3)
-    lower_limit = min(-0.5, improvement_min - 0.8)
-    ax2.set_ylim(lower_limit, upper_limit)
+    # if target_vehicle in ["AV", "CHV", "HV"]:
+    #     ax.set_ylim(9, 13)
+    #     ax2.set_ylim(0, 12)
+    # else:
+    #     y_min = min(baseline.min(), optimized.min())
+    #     y_max = max(baseline.max(), optimized.max())
+    #     ax.set_ylim(y_min, y_max)
+    #     # ax.set_ylim(10, 27)
+    #     ax2.set_ylim(0, 14)
 
     ax.tick_params(axis="both", labelsize=14, width=1.0, length=5)
     ax2.tick_params(axis="y", labelsize=14, colors="#6ea64b", width=1.0, length=5)
@@ -321,7 +315,7 @@ def run_all_experiments(
         print(f"Running experiment: {vehicle}")
         result = run_single_experiment(
             target_vehicle=vehicle,
-            n_lanes=5,
+            n_lanes=4,
             l_max=5,
             step=0.05,
             verbose=verbose_solver,
@@ -334,4 +328,4 @@ def run_all_experiments(
 
 
 if __name__ == "__main__":
-    run_all_experiments(output_dir=f"experiment_figures_{datetime.now().strftime('%Y%m%d_%H%M%S')}", verbose_solver=False, n_runs=1)
+    run_all_experiments(output_dir=f"experiment_figures_4lanes", verbose_solver=False, n_runs=1)
