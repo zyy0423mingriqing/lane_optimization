@@ -284,6 +284,7 @@ class LaneOptimizer:
                     'n_special': n_special,
                     'n_GL': n_GL,
                     'special_capacity': strategy_meta['capacity'],
+                    'GL_capacity': GL_new,
                     'total_capacity': total_capacity,
                     'iterations': iterations,
                     'final_iteration': iteration_result,
@@ -387,6 +388,7 @@ class LaneOptimizer:
         best_result = {
             'strategy': 'GL',
             'lane_allocation': {'GL': n},
+            'lane_capacities': {'GL': GL_origin},
             'total_capacity': best_origin,
             'improvement': 0.0,
             'improvement_percent': 0.0,
@@ -401,9 +403,21 @@ class LaneOptimizer:
 
             total_capacity = result['best']['total_capacity']
             if total_capacity > best_result['total_capacity']:
+                strategy = result['best']['strategy']
+                n_special = result['best']['n_special']
+                n_GL = result['best']['n_GL']
+                special_capacity = result['best']['special_capacity']
+                GL_capacity = result['best']['GL_capacity']
+
+                lane_capacities = {}
+                if strategy != 'GL':
+                    lane_capacities[strategy] = special_capacity
+                lane_capacities['GL'] = GL_capacity
+
                 best_result = {
                     'strategy': strategy,
-                    'lane_allocation': {strategy: result['best']['n_special'], 'GL': result['best']['n_GL']},
+                    'lane_allocation': {strategy: n_special, 'GL': n_GL},
+                    'lane_capacities': lane_capacities,
                     'total_capacity': total_capacity,
                     'improvement': total_capacity - best_origin,
                     'improvement_percent': (total_capacity - best_origin) / best_origin * 100,
