@@ -38,7 +38,7 @@ L_max = 5
 
 STACK_ORDER = ['GL', 'NCAL', 'CL', 'AL', 'CAL']
 
-PENETRATION_RATES = np.round(np.arange(0.0, 1.1, 0.1), 1)
+PENETRATION_RATES = np.round(np.arange(0.0, 1.05, 0.05), 2)
 
 
 def get_optimal_result(p_cav: float, n_lanes: int, L_max: int) -> dict:
@@ -86,8 +86,8 @@ def collect_data(n_lanes: int, L_max: int) -> list:
 
 def plot_throughput(data: list,
                     n_lanes: int,
-                    y_max: int = 12000,
-                    y_step: int = 2000,
+                    y_max: int = None,
+                    y_step: int = None,
                     bar_width: float = 0.25,
                     gap_within_group: float = 0.01,
                     figsize: tuple = (13, 6),
@@ -96,6 +96,24 @@ def plot_throughput(data: list,
     """
     绘制分组堆叠柱状图
     """
+    import math
+    
+    # --- 自适应计算Y轴范围 ---
+    actual_max = 0
+    for row in data:
+        total_capacity = row['f1']['total_capacity']
+        actual_max = max(actual_max, total_capacity)
+    
+    target_max = int(actual_max)  # 留10%余量
+    y_step_adaptive = 1000
+    while y_step_adaptive * 5 < target_max:
+        y_step_adaptive += 1000
+    y_max_adaptive = y_step_adaptive * 5
+    
+    # 如果调用者指定了值，则使用调用者的值
+    y_max_final = y_max if y_max is not None else y_max_adaptive
+    y_step_final = y_step if y_step is not None else y_step_adaptive
+    
     n = len(data)
     x = np.arange(n)
     f_keys = ['f1']
@@ -112,7 +130,8 @@ def plot_throughput(data: list,
 
         for s in STACK_ORDER:
             heights = np.array([
-                row[fkey]['lane_capacities'].get(s, 0.0) * row[fkey]['lane_allocation'].get(s, 0)
+                # row[fkey]['lane_capacities'].get(s, 0.0) * row[fkey]['lane_allocation'].get(s, 0)
+                [row[fkey]['lane_capacities'].get(s, 0.0)]* row[fkey]['lane_allocation'].get(s, 0)
                 for row in data
             ])
 
@@ -123,7 +142,7 @@ def plot_throughput(data: list,
                 width=bar_width,
                 color=STRATEGY_COLORS[s],
                 edgecolor='#888888',
-                linewidth=0.4,
+                linewidth=1.0,
                 zorder=2,
             )
 
@@ -131,14 +150,14 @@ def plot_throughput(data: list,
                 if h < 200:
                     continue
                 mid_y = bot + h / 2
-                lane_count = data[bar_i][fkey]['lane_allocation'].get(s, 0)
-                label = f"{s}\n({lane_count})" if lane_count > 0 else s
+                # lane_count = data[bar_i][fkey]['lane_allocation'].get(s, 0)
+                label = f"{s}" 
                 ax.text(
                     bar.get_x() + bar.get_width() / 2,
                     mid_y,
                     label,
                     ha='center', va='center',
-                    fontsize=7.5,
+                    fontsize=8,
                     color=LABEL_COLOR[s],
                     fontweight='normal',
                     clip_on=True,
@@ -146,8 +165,14 @@ def plot_throughput(data: list,
 
             bottoms += heights
 
-    legend_colors = ['#5DCAA5']
-    legend_labels = [r'$f_1$ (Optimal)']
+    legend_colors = [
+        STRATEGY_COLORS['GL'],
+        STRATEGY_COLORS['NCAL'], 
+        STRATEGY_COLORS['CL'],
+        STRATEGY_COLORS['AL'],
+        STRATEGY_COLORS['CAL'],
+    ]
+    legend_labels = ['GL', 'NCAL', 'CL', 'AL', 'CAL']
     patches = [
         mpatches.Patch(facecolor=c, edgecolor='#888888', linewidth=0.5, label=l)
         for c, l in zip(legend_colors, legend_labels)
@@ -158,18 +183,18 @@ def plot_throughput(data: list,
         frameon=True,
         framealpha=0.9,
         edgecolor='#cccccc',
-        fontsize=11,
+        fontsize=15,
     )
 
     ax.set_xticks(x)
-    ax.set_xticklabels([f'{row["p"]:.1f}' for row in data], fontsize=11)
+    ax.set_xticklabels([f'{int(row["p"] * 100)}' for row in data], fontsize=15)
     ax.set_xlim(-0.6, n - 0.4)
 
-    # ax.set_ylim(0, y_max)
-    # ax.set_yticks(range(0, y_max + 1, y_step))
-    ax.set_yticklabels([f'{v:,}' for v in range(0, y_max + 1, y_step)], fontsize=11)
-    ax.set_ylabel('Total Capacity (veh/h)', fontsize=12)
-    ax.set_xlabel('CAV Penetration\n$P_{CAV}$', fontsize=12)
+    ax.set_ylim(0, y_max_final)
+    ax.set_yticks(range(0, y_max_final + 1, y_step_final))
+    ax.set_yticklabels([f'{v:,}' for v in range(0, y_max_final + 1, y_step_final)], fontsize=15)
+    ax.set_ylabel('Total Capacity (veh/h)',fontweight='bold', fontsize=20)
+    ax.set_xlabel('CAV Penetration $P_{CAV}$ / %',fontweight='bold', fontsize=20)
     # ax.set_title(f'Throughput vs CAV Penetration Rate (N={n_lanes} lanes, L_max={L_max})', fontsize=14)
 
     ax.spines['top'].set_visible(False)
@@ -184,14 +209,14 @@ def plot_throughput(data: list,
 
 if __name__ == '__main__':
 
-    y_max_values = {3: 9000, 4: 12000, 5: 15000}
-    y_step_values = {3: 1500, 4: 2000, 5: 2500}
+    y_max_values = {3: 16000, 4: 23000, 5: 28000}
+    y_step_values = {3: 2000, 4: 3000, 5: 4000}
 
     for n_lanes in [3, 4, 5]:
         print(f"\n=== Processing {n_lanes} lanes ===")
         data = collect_data(n_lanes, L_max)
 
-        y_max = y_max_values.get(n_lanes, 12000)
+        y_max = y_max_values.get(n_lanes, 16000)
         
         y_step = y_step_values.get(n_lanes, 2000)
 

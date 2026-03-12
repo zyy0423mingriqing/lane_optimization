@@ -130,11 +130,11 @@ ax.text(
 # ─── 4d. Axis labels ──────────────────────────────────────────────────────────
 ax.set_xlabel(
     r'Automation Level  $(P_{\mathrm{CAV}}+P_{\mathrm{AV}})$ / %',
-    fontsize=11, fontweight='bold', color='#1C2833', labelpad=14,
+    fontsize=13, fontweight='bold', color='#1C2833', labelpad=12,
 )
 ax.set_ylabel(
     r'Connectivity Level  $(P_{\mathrm{CAV}}+P_{\mathrm{CHV}})$ / %',
-    fontsize=11, fontweight='bold', color='#1C2833', labelpad=14,
+    fontsize=13, fontweight='bold', color='#1C2833', labelpad=12,
 )
 # ax.set_zlabel(
 #     r'Total Capacity (veh/h)',
@@ -142,7 +142,7 @@ ax.set_ylabel(
 # )
 
 # Tick style
-ax.tick_params(axis='both', labelsize=9, colors='#1C2833',
+ax.tick_params(axis='both', labelsize=13, colors='#1C2833',
                length=3, width=0.7)
 ax.set_xticks(range(0, 101, 20))
 ax.set_yticks(range(0, 101, 20))
@@ -160,7 +160,8 @@ z_ticks = np.linspace(
     4,
 ).astype(int)
 ax.set_zticks(z_ticks)
-ax.set_zticklabels([f'{v:,}' for v in z_ticks], fontsize=8)
+ax.set_zticklabels([f'{v:,}' for v in z_ticks], fontsize=13)
+ax.tick_params(axis='z', pad=7) 
 
 # ─── 4g. Colorbar ─────────────────────────────────────────────────────────────
 cbar = fig.colorbar(
@@ -171,9 +172,9 @@ cbar = fig.colorbar(
     pad=0.06,
 )
 cbar.set_label(r'Total Capacity (veh/h)',
-               fontsize=11, fontweight='bold',
+               fontsize=13, fontweight='bold',
                color='#1C2833', labelpad=10)
-cbar.ax.tick_params(labelsize=9, colors='#1C2833', length=3)
+cbar.ax.tick_params(labelsize=13, colors='#1C2833', length=3)
 cbar.outline.set_edgecolor('#AAAAAA')
 cbar.outline.set_linewidth(0.8)
 
