@@ -51,4 +51,4 @@ class NumericalParams:
     """数值计算参数类"""
     EPSILON = 1e-6  # 数值零阈值
     MIN_HEADWAY = 0.5  # 最小车头时距
-    MAX_PLATOON_LENGTH = 5  # 最大车队长度限制（用于数值稳定）
+    MAX_PLATOON_LENGTH = 12  # 最大车队长度限制（用于数值稳定）

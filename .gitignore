@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 缓存
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Office临时文件
+~$*
+~WRL*.tmp
+
+# IDE
+.vscode/
+.idea/

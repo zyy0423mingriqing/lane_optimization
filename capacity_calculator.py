@@ -40,6 +40,11 @@ class LaneCapacityCalculator:
         P_pow_2 = P_CAV_norm ** 2
         P_pow_Lmax = P_CAV_norm ** L_max
         P_pow_Lmax_plus_1 = P_CAV_norm ** (L_max + 1)
+        
+        if abs(P_CAV_norm - 1.0) < NumericalParams.EPSILON:
+            h_bar = ((L_max - 1) * self.h_P + self.h_C) / L_max
+            return 3600 / max(h_bar, NumericalParams.MIN_HEADWAY)
+
         term1 = self.h_L * (1 - P_CAV_norm)
         term2 = self.h_A * (P_CAV_norm - P_pow_2)
         term3 = self.h_P * (P_pow_2 - P_pow_Lmax_plus_1) / (1 - P_pow_Lmax + NumericalParams.EPSILON)
